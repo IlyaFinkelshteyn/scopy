@@ -90,7 +90,7 @@ namespace adiscope {
 
 	public:
 		explicit PowerController_API(PowerController *pw) :
-			ApiObject(TOOL_POWER_CONTROLLER), pw(pw) {}
+			ApiObject(), pw(pw) {}
 		~PowerController_API() {}
 
 		bool syncEnabled() const;

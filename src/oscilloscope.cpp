@@ -513,6 +513,8 @@ Oscilloscope::Oscilloscope(struct iio_context *ctx,
 	onHorizScaleValueChanged(timeBase->value());
 	onTimePositionChanged(timePosition->value());
 
+	osc_api->setObjectName(QString::fromStdString(Filter::tool_name(
+			TOOL_OSCILLOSCOPE)));
 	osc_api->load();
 	osc_api->js_register(engine);
 }

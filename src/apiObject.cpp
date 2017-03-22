@@ -27,7 +27,7 @@
 
 using namespace adiscope;
 
-ApiObject::ApiObject(enum tool tool) : QObject(nullptr), tool(tool)
+ApiObject::ApiObject() : QObject(nullptr)
 {
 }
 
@@ -67,7 +67,7 @@ void ApiObject::load()
 {
 	QSettings settings;
 
-	settings.beginGroup(QString::fromStdString(Filter::tool_name(tool)));
+	settings.beginGroup(objectName());
 
 	auto meta = metaObject();
 	for (unsigned int i = meta->propertyOffset();
@@ -114,7 +114,7 @@ void ApiObject::save()
 {
 	QSettings settings;
 
-	settings.beginGroup(QString::fromStdString(Filter::tool_name(tool)));
+	settings.beginGroup(objectName());
 
 	auto meta = metaObject();
 	for (unsigned int i = meta->propertyOffset();
@@ -153,9 +153,7 @@ void ApiObject::save()
 void ApiObject::js_register(QJSEngine *engine)
 {
 	if (engine) {
-		auto name = QString::fromStdString(Filter::tool_name(tool));
-
-		engine->globalObject().setProperty(name,
+		engine->globalObject().setProperty(objectName(),
 				engine->newQObject(this));
 	}
 }

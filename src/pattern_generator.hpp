@@ -180,7 +180,7 @@ class PatternGenerator_API : public ApiObject
 
 public:
 	explicit PatternGenerator_API(PatternGenerator *pg) :
-		ApiObject(TOOL_PATTERN_GENERATOR), pg(pg) {}
+		ApiObject(), pg(pg) {}
 	~PatternGenerator_API() {}
 
 	QString chm() const;

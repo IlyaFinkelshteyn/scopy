@@ -136,7 +136,7 @@ namespace adiscope {
 
 	public:
 		explicit ToolLauncher_API(ToolLauncher *tl) :
-			ApiObject(TOOL_LAUNCHER), tl(tl) {}
+			ApiObject(), tl(tl) {}
 		~ToolLauncher_API() {}
 
 		bool menu_opened() const;
