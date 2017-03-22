@@ -63,21 +63,63 @@ template <typename T> QList<T> ApiObject::load(
 	return list;
 }
 
-void ApiObject::load()
+void ApiObject::save_obj(QSettings& settings, const QString& prop,
+	const QList<ApiObject*> list)
 {
-	QSettings settings;
+	settings.beginWriteArray(prop, list.size());
 
-	settings.beginGroup(objectName());
+	for (unsigned int i = 0; i < list.size(); i++) {
+		settings.setArrayIndex(i);
+		list.at(i)->save(settings);
+	}
 
-	auto meta = metaObject();
+	settings.endArray();
+}
+
+void ApiObject::load_obj(QSettings& settings, const QString& prop,
+	const QList<ApiObject*> list)
+{
+	int nb = settings.beginReadArray(prop);
+
+	for (unsigned int i = 0; nb; i++) {
+		settings.setArrayIndex(i);
+		list.at(i)->load(settings);
+	}
+
+	settings.endArray();
+}
+
+void ApiObject::_load(ApiObject *obj, QSettings& settings)
+{
+	settings.beginGroup(obj->objectName());
+
+	auto meta = obj->metaObject();
 	for (unsigned int i = meta->propertyOffset();
 			i < meta->propertyCount(); i++) {
 		auto prop = meta->property(i);
-
-		if (!prop.isStored() || !prop.isWritable())
+		if (!prop.isStored() || !prop.isReadable())
 			continue;
 
-		auto data = prop.read(this);
+		int type = prop.userType();
+		if (type >= QMetaType::User) {
+			auto data = prop.read(obj);
+			if (data.canConvert<QVariantList>()) {
+				QList<ApiObject*> objs;
+				bool is_api_obj_list = obj_list_from_qvariant(
+					data, objs);
+				if (is_api_obj_list) {
+					load_obj(settings, prop.name(), objs);
+				}
+			} else if (data.canConvert(type)) {
+				ApiObject *obj = data.value<ApiObject*>();
+				obj->load(settings);
+			}
+		}
+
+		if (!prop.isWritable())
+			continue;
+
+		auto data = prop.read(obj);
 
 		if (data.canConvert<QList<bool>>()) {
 			auto list = load<bool>(settings, prop.name());
@@ -110,21 +152,38 @@ void ApiObject::load()
 	settings.endGroup();
 }
 
-void ApiObject::save()
+void ApiObject::_save(ApiObject *obj, QSettings& settings)
 {
-	QSettings settings;
+	settings.beginGroup(obj->objectName());
 
-	settings.beginGroup(objectName());
-
-	auto meta = metaObject();
+	auto meta = obj->metaObject();
 	for (unsigned int i = meta->propertyOffset();
 			i < meta->propertyCount(); i++) {
 		auto prop = meta->property(i);
-		auto data = prop.read(this);
 
-		if (!prop.isStored() || !prop.isReadable()
-				|| !prop.isWritable())
+		if (!prop.isStored() || !prop.isReadable())
 			continue;
+
+		int type = prop.userType();
+		if (type >= QMetaType::User) {
+			auto data = prop.read(obj);
+			if (data.canConvert<QVariantList>()) {
+				QList<ApiObject*> objs;
+				bool is_api_obj_list = obj_list_from_qvariant(
+					data, objs);
+				if (is_api_obj_list) {
+					save_obj(settings, prop.name(), objs);
+				}
+			} else if (data.canConvert(type)) {
+				ApiObject *obj = data.value<ApiObject*>();
+				obj->save(settings);
+			}
+		}
+
+		if (!prop.isWritable())
+			continue;
+
+		auto data = prop.read(obj);
 
 		if (data.canConvert<QList<bool>>()) {
 			save<bool>(settings, prop.name(),
@@ -150,10 +209,52 @@ void ApiObject::save()
 	settings.endGroup();
 }
 
+void ApiObject::load()
+{
+	QSettings settings;
+
+	_load(this, settings);
+}
+
+void ApiObject::load(QSettings& settings)
+{
+	_load(this, settings);
+}
+
+void ApiObject::save()
+{
+	QSettings settings;
+
+	_save(this, settings);
+}
+
+void ApiObject::save(QSettings& settings)
+{
+	_save(this, settings);
+}
+
 void ApiObject::js_register(QJSEngine *engine)
 {
 	if (engine) {
 		engine->globalObject().setProperty(objectName(),
 				engine->newQObject(this));
 	}
+}
+
+bool ApiObject::obj_list_from_qvariant(const QVariant& data,
+	QList<ApiObject*>& objects)
+{
+	bool is_api_obj_list = true;
+	QSequentialIterable iterable = data.value<QSequentialIterable>();
+	Q_FOREACH (const QVariant &v, iterable) {
+		if (v.canConvert<ApiObject*>()) {
+			ApiObject *obj = v.value<ApiObject*>();
+			objects.append(obj);
+		} else {
+			is_api_obj_list = false;
+			break;
+		}
+	}
+
+	return is_api_obj_list;
 }

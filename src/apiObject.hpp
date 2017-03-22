@@ -36,7 +36,9 @@ namespace adiscope {
 		~ApiObject();
 
 		void load();
+		void load(QSettings&);
 		void save();
+		void save(QSettings&);
 
 		void js_register(QJSEngine *engine);
 
@@ -45,6 +47,17 @@ namespace adiscope {
 				const QString& prop, const QList<T>& list);
 		template <typename T> QList<T> load(QSettings& settings,
 				const QString& prop);
+
+		void save_obj(QSettings& settings, const QString& prop,
+				const QList<ApiObject*> list);
+		void load_obj(QSettings& settings, const QString& prop,
+				const QList<ApiObject*> list);
+
+		void _save(ApiObject *, QSettings&);
+		void _load(ApiObject *, QSettings&);
+
+		bool obj_list_from_qvariant(const QVariant& data,
+			QList<ApiObject*>& objects);
 	};
 }
 
