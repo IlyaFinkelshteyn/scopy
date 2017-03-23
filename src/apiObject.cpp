@@ -81,7 +81,7 @@ void ApiObject::load_obj(QSettings& settings, const QString& prop,
 {
 	int nb = settings.beginReadArray(prop);
 
-	for (unsigned int i = 0; nb; i++) {
+	for (unsigned int i = 0; i < nb; i++) {
 		settings.setArrayIndex(i);
 		list.at(i)->load(settings);
 	}
