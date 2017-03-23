@@ -189,6 +189,8 @@ Oscilloscope::Oscilloscope(struct iio_context *ctx,
 				"}").arg(plot.getLineColor(chIdx).name()));
 		ui->chn_scales->addWidget(label);
 
+		channels_api.append(new Channel_API(this));
+
 		chIdx++;
 	}
 
@@ -1924,6 +1926,20 @@ void Oscilloscope::on_btnSettings_clicked(bool checked)
 	toggleRightMenu(btn);
 }
 
+/*
+ * class Oscilloscope_API
+ */
+
+QList<Channel_API*> Oscilloscope_API::getChannelsForStoring()
+{
+	return osc->channels_api;
+}
+
+QQmlListProperty<Channel_API> Oscilloscope_API::getChannelsForScripting()
+{
+	return QQmlListProperty<Channel_API>(this, osc->channels_api);
+}
+
 bool Oscilloscope_API::hasCursors() const
 {
 	return osc->ui->boxCursors->isChecked();
@@ -2102,27 +2118,6 @@ void Oscilloscope_API::setTriggerLevel(const QList<double>& list)
 	}
 }
 
-QList<double> Oscilloscope_API::getVoltsPerDiv() const
-{
-	QList<double> list;
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++)
-		list.append(osc->plot.VertUnitsPerDiv(i));
-
-	return list;
-}
-
-void Oscilloscope_API::setVoltsPerDiv(const QList<double>& list)
-{
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++)
-		osc->plot.setVertUnitsPerDiv(list.at(i), i);
-
-	osc->voltsPerDiv->setValue(osc->plot.VertUnitsPerDiv());
-}
-
 QList<QString> Oscilloscope_API::getMathChannels() const
 {
 	QList<QString> list;
@@ -2140,27 +2135,6 @@ void Oscilloscope_API::setMathChannels(const QList<QString>& list)
 {
 	for (unsigned int i = 0; i < list.size(); i++)
 		osc->add_math_channel(list.at(i).toStdString());
-}
-
-QList<double> Oscilloscope_API::getVOffset() const
-{
-	QList<double> list;
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++)
-		list.append(osc->plot.VertOffset(i));
-
-	return list;
-}
-
-void Oscilloscope_API::setVOffset(const QList<double>& list)
-{
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++)
-		osc->plot.setVertOffset(list.at(i), i);
-
-	osc->voltsPosition->setValue(osc->plot.VertOffset());
 }
 
 double Oscilloscope_API::getTimePos() const
@@ -2289,50 +2263,6 @@ void Oscilloscope::channelLineWidthChanged(int id)
 	}
 }
 
-QList<double> Oscilloscope_API::getLineThickness() const
-{
-	QList<double> list;
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++)
-		list.append(osc->plot.getLineWidthF(i));
-
-	return list;
-}
-
-void Oscilloscope_API::setLineThickness(const QList<double>& list)
-{
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++)
-		osc->plot.setLineWidthF(i, list.at(i));
-}
-
-QList<bool> Oscilloscope_API::channelEn() const
-{
-	QList<bool> list;
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++) {
-		QWidget *w = osc->channelWidgetAtId(i);
-		QCheckBox *box = w->findChild<QCheckBox *>("box");
-		list.append(box->isChecked());
-	}
-
-	return list;
-}
-
-void Oscilloscope_API::setChannelEn(const QList<bool>& list)
-{
-	unsigned int i;
-
-	for (i = 0; i < osc->nb_channels + osc->nb_math_channels; i++) {
-		QWidget *w = osc->channelWidgetAtId(i);
-		QCheckBox *box = w->findChild<QCheckBox *>("box");
-		box->setChecked(list.at(i));
-	}
-}
-
 int Oscilloscope_API::getCurrentChannel() const
 {
 	return osc->current_channel;
@@ -2346,4 +2276,64 @@ void Oscilloscope_API::setCurrentChannel(int chn_id)
 
 	QPushButton *name = chn_widget->findChild<QPushButton *>("name");
 	name->setChecked(true);
+}
+
+/*
+ * Channel_API
+ */
+
+bool Channel_API::channelEn() const
+{
+	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	QWidget *w = osc->channelWidgetAtId(index);
+	QCheckBox *box = w->findChild<QCheckBox *>("box");
+
+	return box->isChecked();
+}
+
+void Channel_API::setChannelEn(bool en)
+{
+	int index = osc->channels_api.indexOf(this);
+	QWidget *w = osc->channelWidgetAtId(index);
+	QCheckBox *box = w->findChild<QCheckBox *>("box");
+
+	box->setChecked(en);
+}
+
+double Channel_API::getVoltsPerDiv() const
+{
+	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	return osc->plot.VertUnitsPerDiv(index);
+}
+
+void Channel_API::setVoltsPerDiv(double val)
+{
+	int index = osc->channels_api.indexOf(this);
+	osc->plot.setVertUnitsPerDiv(val, index);
+}
+
+double Channel_API::getVOffset() const
+{
+	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	return osc->plot.VertOffset(index);
+}
+
+void Channel_API::setVOffset(double val)
+{
+	int index = osc->channels_api.indexOf(this);
+	osc->plot.setVertOffset(val, index);
+}
+
+double Channel_API::getLineThickness() const
+{
+	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+
+	return osc->plot.getLineWidthF(index);
+}
+
+void Channel_API::setLineThickness(double val)
+{
+	int index = osc->channels_api.indexOf(this);
+
+	osc->plot.setLineWidthF(index, val);
 }
