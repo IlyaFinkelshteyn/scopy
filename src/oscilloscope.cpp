@@ -722,6 +722,8 @@ void Oscilloscope::add_math_channel(const std::string& function)
 
 	// Default hysteresis levels for measurements of the new channel
 	plot.setPeriodDetectHyst(curve_id, 1.0 / 5);
+
+	math_channels_api.append(new Channel_API(this, true));
 }
 
 void Oscilloscope::del_math_channel()
@@ -795,6 +797,9 @@ void Oscilloscope::del_math_channel()
 				QwtAxisId(QwtPlot::xBottom, 0),
 				QwtAxisId(QwtPlot::yLeft, i));
 	}
+
+	auto math_chn_api = math_channels_api.takeAt(curve_id - nb_channels);
+	delete math_chn_api;
 
 	updateRunButton(false);
 	plot.replot();
@@ -1940,6 +1945,30 @@ QQmlListProperty<Channel_API> Oscilloscope_API::getChannelsForScripting()
 	return QQmlListProperty<Channel_API>(this, osc->channels_api);
 }
 
+int Oscilloscope_API::math_channels_list_size() const
+{
+	return osc->math_channels_api.size();
+}
+void Oscilloscope_API::setMathChannelListSize(int size)
+{
+	qDeleteAll(osc->math_channels_api);
+
+	osc->math_channels_api.clear();
+
+	for (int i = 0; i < size; i++)
+		osc->math_channels_api.append(new Channel_API(osc, true));
+}
+
+QList<Channel_API*> Oscilloscope_API::getMathChannelsForStoring() const
+{
+	return osc->math_channels_api;
+}
+
+QQmlListProperty<Channel_API> Oscilloscope_API::getMathChannelsForScripting()
+{
+	return QQmlListProperty<Channel_API>(this, osc->math_channels_api);
+}
+
 bool Oscilloscope_API::hasCursors() const
 {
 	return osc->ui->boxCursors->isChecked();
@@ -2118,25 +2147,6 @@ void Oscilloscope_API::setTriggerLevel(const QList<double>& list)
 	}
 }
 
-QList<QString> Oscilloscope_API::getMathChannels() const
-{
-	QList<QString> list;
-
-	for (unsigned int i = 0; i < osc->nb_math_channels; i++) {
-		QWidget *obj = osc->ui->channelsList->itemAt(
-				osc->nb_channels + i)->widget();
-		list.append(obj->property("function").toString());
-	}
-
-	return list;
-}
-
-void Oscilloscope_API::setMathChannels(const QList<QString>& list)
-{
-	for (unsigned int i = 0; i < list.size(); i++)
-		osc->add_math_channel(list.at(i).toStdString());
-}
-
 double Oscilloscope_API::getTimePos() const
 {
 	return osc->timePosition->value();
@@ -2284,7 +2294,13 @@ void Oscilloscope_API::setCurrentChannel(int chn_id)
 
 bool Channel_API::channelEn() const
 {
-	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(const_cast<Channel_API*>(this));
+
+	if (is_math)
+		index += osc->nb_channels;
+
 	QWidget *w = osc->channelWidgetAtId(index);
 	QCheckBox *box = w->findChild<QCheckBox *>("box");
 
@@ -2293,7 +2309,13 @@ bool Channel_API::channelEn() const
 
 void Channel_API::setChannelEn(bool en)
 {
-	int index = osc->channels_api.indexOf(this);
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(this);
+
+	if (is_math)
+		index += osc->nb_channels;
+
 	QWidget *w = osc->channelWidgetAtId(index);
 	QCheckBox *box = w->findChild<QCheckBox *>("box");
 
@@ -2302,38 +2324,97 @@ void Channel_API::setChannelEn(bool en)
 
 double Channel_API::getVoltsPerDiv() const
 {
-	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(const_cast<Channel_API*>(this));
+
+	if (is_math)
+		index += osc->nb_channels;
 	return osc->plot.VertUnitsPerDiv(index);
 }
 
 void Channel_API::setVoltsPerDiv(double val)
 {
-	int index = osc->channels_api.indexOf(this);
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(this);
+
+	if (is_math)
+		index += osc->nb_channels;
 	osc->plot.setVertUnitsPerDiv(val, index);
 }
 
 double Channel_API::getVOffset() const
 {
-	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(const_cast<Channel_API*>(this));
+
+	if (is_math)
+		index += osc->nb_channels;
 	return osc->plot.VertOffset(index);
 }
 
 void Channel_API::setVOffset(double val)
 {
-	int index = osc->channels_api.indexOf(this);
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(this);
+
+	if (is_math)
+		index += osc->nb_channels;
 	osc->plot.setVertOffset(val, index);
 }
 
 double Channel_API::getLineThickness() const
 {
-	int index = osc->channels_api.indexOf(const_cast<Channel_API*>(this));
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(const_cast<Channel_API*>(this));
+
+	if (is_math)
+		index += osc->nb_channels;
 
 	return osc->plot.getLineWidthF(index);
 }
 
 void Channel_API::setLineThickness(double val)
 {
-	int index = osc->channels_api.indexOf(this);
+	QList<Channel_API*> *list = is_math ? &osc->math_channels_api :
+		&osc->channels_api;
+	int index = list->indexOf(this);
+
+	if (is_math)
+		index += osc->nb_channels;
 
 	osc->plot.setLineWidthF(index, val);
+}
+
+bool Channel_API::isMath() const
+{
+	return is_math;
+}
+
+QString Channel_API::mathFunction() const
+{
+	if (!isMath())
+		return "";
+
+	QList<Channel_API*> *list = &osc->math_channels_api;
+	int index = list->indexOf(const_cast<Channel_API*>(this));
+
+	auto item = osc->ui->channelsList->itemAt(osc->nb_channels + index);
+	if (!item)
+		return "";
+
+	return item->widget()->property("function").toString();
+}
+
+void Channel_API::setMathFunction(const QString& function)
+{
+	if (isMath()){
+		osc->add_math_channel(function.toStdString());
+		auto last = osc->math_channels_api.takeLast();
+		delete last;
+	}
 }

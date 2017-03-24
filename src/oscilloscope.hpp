@@ -230,6 +230,7 @@ namespace adiscope {
 
 		Oscilloscope_API *osc_api;
 		QList<Channel_API *> channels_api;
+		QList<Channel_API *> math_channels_api;
 
 		QList<std::shared_ptr<MeasurementData>> measurements_data;
 		QList<std::shared_ptr<MeasurementGui>> measurements_gui;
@@ -277,6 +278,14 @@ namespace adiscope {
 		Q_PROPERTY(QQmlListProperty<Channel_API> channels READ
 			getChannelsForScripting STORED false)
 
+		Q_PROPERTY(int math_channel_list_size READ
+			math_channels_list_size WRITE setMathChannelListSize
+			SCRIPTABLE false)
+		Q_PROPERTY(QList<Channel_API*> math_channel_list READ
+			getMathChannelsForStoring SCRIPTABLE false)
+		Q_PROPERTY(QQmlListProperty<Channel_API> math_channels READ
+			getMathChannelsForScripting STORED false)
+
 		Q_PROPERTY(bool running READ running WRITE run STORED false);
 
 		Q_PROPERTY(bool cursors READ hasCursors WRITE setCursors);
@@ -308,10 +317,6 @@ namespace adiscope {
 		Q_PROPERTY(QList<double> trigger_level
 				READ getTriggerLevel WRITE setTriggerLevel)
 
-		Q_PROPERTY(QList<QString> math_channels
-				READ getMathChannels WRITE setMathChannels
-				SCRIPTABLE false /* too complex for now */);
-
 		Q_PROPERTY(double time_position
 				READ getTimePos WRITE setTimePos);
 		Q_PROPERTY(double time_base READ getTimeBase WRITE setTimeBase);
@@ -332,6 +337,12 @@ namespace adiscope {
 
 		QList<Channel_API*> getChannelsForStoring();
 		QQmlListProperty<Channel_API> getChannelsForScripting();
+
+		int math_channels_list_size() const;
+		void setMathChannelListSize(int size);
+
+		QList<Channel_API*> getMathChannelsForStoring() const;
+		QQmlListProperty<Channel_API> getMathChannelsForScripting();
 
 		bool running() const;
 		void run(bool en);
@@ -378,9 +389,6 @@ namespace adiscope {
 		QList<double> getTriggerLevel() const;
 		void setTriggerLevel(const QList<double>& list);
 
-		QList<QString> getMathChannels() const;
-		void setMathChannels(const QList<QString>& list);
-
 		double getTimePos() const;
 		void setTimePos(double pos);
 
@@ -404,6 +412,9 @@ namespace adiscope {
 	{
 		Q_OBJECT
 
+		Q_PROPERTY(QString math_function READ mathFunction
+			WRITE setMathFunction)
+
 		Q_PROPERTY(bool channel_en READ channelEn WRITE setChannelEn)
 
 		Q_PROPERTY(double volts_per_div
@@ -414,12 +425,14 @@ namespace adiscope {
 		Q_PROPERTY(double line_thickness
 				READ getLineThickness WRITE setLineThickness)
 
-
 	public:
 		 // FIX ME: Channel_API should use a 'channel' instead of 'osc'
 		 // There is no channel class yet!
-		explicit Channel_API(Oscilloscope *osc) :
-			ApiObject(), osc(osc) { setObjectName("channel"); }
+		explicit Channel_API(Oscilloscope *osc, bool math = false) :
+			ApiObject(), osc(osc), is_math(math)
+		{
+			setObjectName("channel");
+		}
 
 		bool channelEn() const;
 		void setChannelEn(bool en);
@@ -433,8 +446,13 @@ namespace adiscope {
 		double getLineThickness() const;
 		void setLineThickness(double val);
 
+		bool isMath() const;
+		QString mathFunction() const;
+		void setMathFunction(const QString& function);
+
 	private:
 		Oscilloscope *osc;
+		bool is_math;
 	};
 }
 
