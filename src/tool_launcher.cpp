@@ -52,6 +52,7 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 
 
 	ui->btnRefresh->click();
+	ui->btnRemove->setEnabled(false);
 	current = ui->homeWidget;
 
 	ui->menu->setMinimumSize(ui->menu->sizeHint());
@@ -118,13 +119,13 @@ QPushButton *ToolLauncher::addContext(const QString& uri,const QString& type)
 	pair->second.description->setText(uri);
 
 	ui->devicesList->addWidget(&pair->first);
-	pair->second.type = type;
 
 	connect(pair->second.btn, SIGNAL(clicked(bool)),
 	        this, SLOT(device_btn_clicked(bool)));
 
 	pair->second.btn->setProperty("uri", QVariant(uri));
 	devices.append(pair);
+	provenience.append(type);
 
 	return pair->second.btn;
 }
@@ -248,6 +249,7 @@ void adiscope::ToolLauncher::device_btn_clicked(bool pressed)
 
 	resetStylesheets();
 	ui->btnConnect->setEnabled(pressed);
+	ui->btnRemove->setEnabled(pressed);
 }
 
 void adiscope::ToolLauncher::on_btnConnect_clicked(bool pressed)
@@ -299,13 +301,15 @@ void adiscope::ToolLauncher::on_btnRefresh_clicked(bool pressed)
 			(*it)->second.btn->click();
 		}
 
-		if ((*it)->second.type == "usb") {
+		if (provenience[i] == "usb") {
 			delete *it;
 			devices.removeAt(i);
+			provenience.removeAt(i);
 			--it;
 		}
-
-		i++;
+		else{
+			i++;
+		}
 	}
 
 	struct iio_scan_context *scan_ctx = iio_create_scan_context("usb", 0);
@@ -336,6 +340,23 @@ void adiscope::ToolLauncher::on_btnRefresh_clicked(bool pressed)
 
 	iio_context_info_list_free(info);
 	iio_scan_context_destroy(scan_ctx);
+}
+
+void adiscope::ToolLauncher::on_btnRemove_clicked(bool pressed)
+{
+	int i = 0;
+
+	for (auto it = devices.begin(); it != devices.end(); ++it) {
+		if ((*it)->second.btn -> isChecked()) {
+			(*it)->second.btn->click();
+			delete *it;
+			devices.removeAt(i);
+			provenience.removeAt(i);
+			return;
+		}
+
+		i++;
+	}
 }
 
 void adiscope::ToolLauncher::destroyContext()

@@ -77,6 +77,7 @@ private Q_SLOTS:
 
 	void on_btnConnect_clicked(bool pressed);
 	void on_btnRefresh_clicked(bool pressed);
+	void on_btnRemove_clicked(bool pressed);
 
 	void device_btn_clicked(bool pressed);
 	void addRemoteContext();
@@ -88,10 +89,12 @@ private Q_SLOTS:
 	void hasText();
 
 private:
+
 	Ui::ToolLauncher *ui;
 	struct iio_context *ctx;
 
 	QVector<QPair<QWidget, Ui::Device> *> devices;
+	QVector<QString> provenience;
 
 	DMM *dmm;
 	PowerController *power_control;
