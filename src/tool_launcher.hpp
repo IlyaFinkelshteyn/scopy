@@ -76,6 +76,7 @@ private Q_SLOTS:
 	void setButtonBackground(bool on);
 
 	void on_btnConnect_clicked(bool pressed);
+	void on_btnRefresh_clicked(bool pressed);
 
 	void device_btn_clicked(bool pressed);
 	void addRemoteContext();
@@ -115,7 +116,8 @@ private:
 	void resetStylesheets();
 	void calibrate();
 	void checkIp(const QString& ip);
-	Q_INVOKABLE QPushButton *addContext(const QString& hostname);
+	Q_INVOKABLE QPushButton *addContext(const QString& hostname,
+	                                    const QString& type);
 
 	static void apply_m2k_fixes(struct iio_context *ctx);
 };

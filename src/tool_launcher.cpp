@@ -43,9 +43,6 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 	network_analyzer(nullptr), tl_api(new ToolLauncher_API(this)),
 	notifier(STDIN_FILENO, QSocketNotifier::Read)
 {
-	struct iio_context_info **info;
-	unsigned int nb_contexts;
-
 	ui->setupUi(this);
 
 	setWindowIcon(QIcon(":/icon.ico"));
@@ -53,35 +50,8 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 	// TO DO: remove this when the About menu becomes available
 	setWindowTitle(QString("Scopy - ") + QString(SCOPY_VERSION_GIT));
 
-	struct iio_scan_context *scan_ctx = iio_create_scan_context("usb", 0);
 
-	if (!scan_ctx) {
-		std::cerr << "Unable to create scan context!" << std::endl;
-		return;
-	}
-
-	ssize_t ret = iio_scan_context_get_info_list(scan_ctx, &info);
-
-	if (ret < 0) {
-		std::cerr << "Unable to scan!" << std::endl;
-		return;
-	}
-
-	nb_contexts = static_cast<unsigned int>(ret);
-
-	for (unsigned int i = 0; i < nb_contexts; i++) {
-		const char *uri = iio_context_info_get_uri(info[i]);
-
-		if (!QString(uri).startsWith("usb:")) {
-			continue;
-		}
-
-		addContext(QString(uri));
-	}
-
-	iio_context_info_list_free(info);
-	iio_scan_context_destroy(scan_ctx);
-
+	ui->btnRefresh->click();
 	current = ui->homeWidget;
 
 	ui->menu->setMinimumSize(ui->menu->sizeHint());
@@ -140,7 +110,7 @@ void ToolLauncher::destroyPopup()
 	popup->deleteLater();
 }
 
-QPushButton *ToolLauncher::addContext(const QString& uri)
+QPushButton *ToolLauncher::addContext(const QString& uri,const QString& type)
 {
 	auto pair = new QPair<QWidget, Ui::Device>;
 	pair->second.setupUi(&pair->first);
@@ -148,6 +118,7 @@ QPushButton *ToolLauncher::addContext(const QString& uri)
 	pair->second.description->setText(uri);
 
 	ui->devicesList->addWidget(&pair->first);
+	pair->second.type = type;
 
 	connect(pair->second.btn, SIGNAL(clicked(bool)),
 	        this, SLOT(device_btn_clicked(bool)));
@@ -172,7 +143,7 @@ void ToolLauncher::addRemoteContext()
 	ConnectDialog *dialog = new ConnectDialog(popup);
 	connect(dialog, &ConnectDialog::newContext,
 	[=](const QString& uri) {
-		addContext(uri);
+		addContext(uri,QString("other"));
 		popup->close();
 	});
 }
@@ -314,6 +285,57 @@ void adiscope::ToolLauncher::on_btnConnect_clicked(bool pressed)
 		setDynamicProperty(ui->btnConnect, "failed", true);
 		setDynamicProperty(btn, "failed", true);
 	}
+}
+
+void adiscope::ToolLauncher::on_btnRefresh_clicked(bool pressed)
+{
+	struct iio_context_info **info;
+	unsigned int nb_contexts;
+
+	int i=0;
+
+	for (auto it = devices.begin(); it != devices.end(); ++it) {
+		if ((*it)->second.btn -> isChecked()) {
+			(*it)->second.btn->click();
+		}
+
+		if ((*it)->second.type == "usb") {
+			delete *it;
+			devices.removeAt(i);
+			--it;
+		}
+
+		i++;
+	}
+
+	struct iio_scan_context *scan_ctx = iio_create_scan_context("usb", 0);
+
+	if (!scan_ctx) {
+		std::cerr << "Unable to create scan context!" << std::endl;
+		return;
+	}
+
+	ssize_t ret = iio_scan_context_get_info_list(scan_ctx, &info);
+
+	if (ret < 0) {
+		std::cerr << "Unable to scan!" << std::endl;
+		return;
+	}
+
+	nb_contexts = static_cast<unsigned int>(ret);
+
+	for (unsigned int i = 0; i < nb_contexts; i++) {
+		const char *uri = iio_context_info_get_uri(info[i]);
+
+		if (!QString(uri).startsWith("usb:")) {
+			continue;
+		}
+
+		addContext(QString(uri),QString("usb"));
+	}
+
+	iio_context_info_list_free(info);
+	iio_scan_context_destroy(scan_ctx);
 }
 
 void adiscope::ToolLauncher::destroyContext()
@@ -586,7 +608,7 @@ bool ToolLauncher_API::connect(const QString& uri)
 	}
 
 	if (!btn) {
-		btn = tl->addContext(uri);
+		btn = tl->addContext(uri,QString("usb"));
 	}
 
 	btn->click();
