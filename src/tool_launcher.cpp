@@ -34,6 +34,8 @@
 #include <QFutureWatcher>
 #include <QFuture>
 #include <QSettings>
+#include <QTextBrowser>
+#include <QStackedWidget>
 
 #include <iio.h>
 
@@ -120,6 +122,28 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 		SLOT(setButtonBackground(bool)));
 	connect(ui->btnNetworkAnalyzer, SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
+
+	page_menu = new QStackedWidget();
+	QTextBrowser *textBrowser = new QTextBrowser();
+	textBrowser->setObjectName(QStringLiteral("textBrowser"));
+	textBrowser->setStyleSheet(QStringLiteral("background-color: #0e0e0e;"));
+	textBrowser->setFrameShape(QFrame::NoFrame);
+	textBrowser->setSource(QUrl(QStringLiteral("qrc:/scopy.html")));
+	textBrowser->setOpenExternalLinks(true);
+	cmenu = new ConnectMenu();
+	page_menu->addWidget(cmenu);
+	page_menu->addWidget(textBrowser);
+	ui->vstacklayout->addWidget(page_menu);
+	page_menu->setCurrentIndex(1);
+
+	connect(cmenu,&ConnectMenu::abort,[=]() {
+		page_menu->setCurrentIndex(1);
+	});
+
+	connect(cmenu,&ConnectMenu::newContext,[=](const QString& uri) {
+		addContext(uri);
+	});
+
 
 #if QT_VERSION >= QT_VERSION_CHECK(5, 6, 0)
 	js_engine.installExtensions(QJSEngine::ConsoleExtension);
@@ -280,21 +304,8 @@ QPushButton *ToolLauncher::addContext(const QString& uri)
 
 void ToolLauncher::addRemoteContext()
 {
-	pv::widgets::Popup *popup = new pv::widgets::Popup(ui->homeWidget);
-	connect(popup, SIGNAL(closed()), this, SLOT(destroyPopup()));
-
-	QPoint pos = ui->groupBox->mapToGlobal(ui->btnAdd->pos());
-	pos += QPoint(ui->btnAdd->width() / 2, ui->btnAdd->height());
-
-	popup->set_position(pos, pv::widgets::Popup::Bottom);
-	popup->show();
-
-	ConnectDialog *dialog = new ConnectDialog(popup);
-	connect(dialog, &ConnectDialog::newContext,
-	[=](const QString& uri) {
-		addContext(uri);
-		popup->close();
-	});
+	page_menu->setCurrentIndex(0);
+	cmenu->focus();
 }
 
 void ToolLauncher::swapMenu(QWidget *menu)

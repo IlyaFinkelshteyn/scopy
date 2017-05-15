@@ -1487,7 +1487,7 @@ font-weight: bold;
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>90</width>
+                    <width>96</width>
                     <height>64</height>
                    </size>
                   </property>
@@ -1567,22 +1567,8 @@ background-color: orange;
           </layout>
          </item>
          <item>
-          <widget class="QTextBrowser" name="textBrowser">
-           <property name="styleSheet">
-            <string notr="true">background-color: #0e0e0e;</string>
-           </property>
-           <property name="frameShape">
-            <enum>QFrame::NoFrame</enum>
-           </property>
-           <property name="source">
-            <url>
-             <string>qrc:/scopy.html</string>
-            </url>
-           </property>
-           <property name="openExternalLinks">
-            <bool>true</bool>
-           </property>
-          </widget>
+          <layout class="QVBoxLayout" name="vstacklayout">
+          </layout>
          </item>
         </layout>
        </widget>
@@ -1628,6 +1614,11 @@ background-color: orange;
    <extends>QPushButton</extends>
    <header>customPushButton.hpp</header>
   </customwidget>
+  <customwidget>
+   <class>QVBoxLayout</class>
+   <extends>QWidget</extends>
+   <header>qvboxlayout.h</header>
+  </customwidget>
  </customwidgets>
  <resources>
   <include location="../resources/resources.qrc"/>
@@ -1651,7 +1642,7 @@ background-color: orange;
   </connection>
  </connections>
  <buttongroups>
-  <buttongroup name="buttonGroup"/>
   <buttongroup name="buttonGroup_2"/>
+  <buttongroup name="buttonGroup"/>
  </buttongroups>
 </ui>

@@ -38,6 +38,8 @@
 #include "pattern_generator.hpp"
 #include "network_analyzer.hpp"
 #include "digitalio.hpp"
+#include "connectmenu.h"
+
 
 extern "C" {
 	struct iio_context;
@@ -95,6 +97,9 @@ private Q_SLOTS:
 private:
 	Ui::ToolLauncher *ui;
 	struct iio_context *ctx;
+
+	QStackedWidget *page_menu;
+	ConnectMenu *cmenu;
 
 	QVector<QPair<QWidget, Ui::Device> *> devices;
 
