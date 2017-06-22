@@ -52,8 +52,13 @@
       </property>
       <property name="styleSheet">
        <string notr="true">QPushButton { text-align:left; border: none; background-color: none; }
-.QWidget:hover { background-color: rgba(0, 0, 0, 60); }
-.QWidget[selected=true] { background-color: rgba(0, 0, 0, 60); }</string>
+.QWidget:hover { 
+	background-color: rgba(0, 0, 0, 60);
+	border:1px solid rgb(0, 0, 0); 
+}
+.QWidget[selected=true] { background-color: rgba(0, 0, 0, 60); }
+
+</string>
       </property>
       <layout class="QVBoxLayout" name="verticalLayout">
        <property name="leftMargin">
@@ -441,6 +446,9 @@ background-image: url(:/icons/ico-play-green.svg);
         <widget class="QWidget" name="oscilloscope" native="true">
          <property name="enabled">
           <bool>false</bool>
+         </property>
+         <property name="styleSheet">
+          <string notr="true"/>
          </property>
          <layout class="QHBoxLayout" name="horizontalLayout_2">
           <property name="leftMargin">
@@ -1489,7 +1497,7 @@ font-weight: bold;
                   </property>
                   <property name="minimumSize">
                    <size>
-                    <width>96</width>
+                    <width>78</width>
                     <height>64</height>
                    </size>
                   </property>
