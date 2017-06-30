@@ -28,6 +28,8 @@
 #include <QSocketNotifier>
 #include <QVector>
 #include <QButtonGroup>
+#include <QMap>
+#include <QStringList>
 
 #include "apiObject.hpp"
 #include "dmm.hpp"
@@ -41,6 +43,7 @@
 #include "pattern_generator.hpp"
 #include "network_analyzer.hpp"
 #include "digitalio.hpp"
+#include "menuoption.h"
 
 extern "C" {
 	struct iio_context;
@@ -68,6 +71,8 @@ public:
 
 	Q_INVOKABLE void runProgram(const QString& program, const QString& fn);
 
+	//QMap<QString, MenuOption*> getMenuOptions();
+
 Q_SIGNALS:
 	void connectionDone(bool success);
 	void adcCalibrationDone();
@@ -81,14 +86,14 @@ private Q_SLOTS:
 	void update();
 	void ping();
 
-	void on_btnOscilloscope_clicked();
-	void on_btnSignalGenerator_clicked();
-	void on_btnDMM_clicked();
-	void on_btnPowerControl_clicked();
-	void on_btnLogicAnalyzer_clicked();
-	void on_btnPatternGenerator_clicked();
-	void on_btnNetworkAnalyzer_clicked();
-	void on_btnSpectrumAnalyzer_clicked();
+	void btnOscilloscope_clicked();
+	void btnSignalGenerator_clicked();
+	void btnDMM_clicked();
+	void btnPowerControl_clicked();
+	void btnLogicAnalyzer_clicked();
+	void btnPatternGenerator_clicked();
+	void btnNetworkAnalyzer_clicked();
+	void btnSpectrumAnalyzer_clicked();
 	void on_btnHome_clicked();
 	void setButtonBackground(bool on);
 
@@ -103,13 +108,17 @@ private Q_SLOTS:
 
 	void hasText();
 
-	void on_btnDigitalIO_clicked();
+	void btnDigitalIO_clicked();
 
 	void toolDetached(bool detached);
+
+	void swapMenuOptions(int source, int destination, bool dropAfter);
 
 private:
 	Ui::ToolLauncher *ui;
 	struct iio_context *ctx;
+
+	QMap<QString, MenuOption*> toolMenu;
 
 	QVector<QPair<QWidget, Ui::Device> *> devices;
 
@@ -156,6 +165,10 @@ private:
 	Q_INVOKABLE QPushButton *addContext(const QString& hostname);
 
 	void updateListOfDevices(const QVector<QString>& uris);
+	void generateMenu();
+	QStringList tools;
+	QStringList toolIcons;
+	void UpdatePosition(QWidget *widget, int position);
 };
 
 class ToolLauncher_API: public ApiObject

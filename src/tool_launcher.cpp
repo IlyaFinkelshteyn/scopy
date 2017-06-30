@@ -25,6 +25,8 @@
 #include "spectrum_analyzer.hpp"
 #include "tool_launcher.hpp"
 #include "qtjs.hpp"
+#include "menuoption.h"
+#include "menuoptioncustom.h"
 
 #include "ui_device.h"
 #include "ui_tool_launcher.h"
@@ -35,11 +37,13 @@
 #include <QMessageBox>
 #include <QTimer>
 #include <QSettings>
+#include <QStringList>
 
 #include <iio.h>
 
 #define TIMER_TIMEOUT_MS 5000
 #define ALIVE_TIMER_TIMEOUT_MS 5000
+#define MAX_MENU_OPTIONS 9
 
 using namespace adiscope;
 
@@ -57,6 +61,7 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 		notifier.setEnabled(false);
 
 	ui->setupUi(this);
+	generateMenu();
 
 	setWindowIcon(QIcon(":/icon.ico"));
 
@@ -83,29 +88,57 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 	/* Show a smooth opening when the app starts */
 	ui->menu->toggleMenu(true);
 
-	connect(ui->btnOscilloscope, SIGNAL(toggled(bool)), this,
+	//option click
+	connect(toolMenu["Oscilloscope"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnOscilloscope_clicked()));
+	connect(toolMenu["Signal Generator"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnSignalGenerator_clicked()));
+	connect(toolMenu["Voltmeter"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnDMM_clicked()));
+	connect(toolMenu["Power Supply"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnPowerControl_clicked()));
+	connect(toolMenu["Logic Analyzer"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnLogicAnalyzer_clicked()));
+	connect(toolMenu["Pattern Generator"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnPatternGenerator_clicked()));
+	connect(toolMenu["Network Analyzer"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnNetworkAnalyzer_clicked()));
+	connect(toolMenu["Digital IO"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnDigitalIO_clicked()));
+	connect(toolMenu["Spectrum Analyzer"]->getToolBtn(), SIGNAL(clicked()), this,
+		SLOT(btnSpectrumAnalyzer_clicked()));
+
+
+	//option background
+	connect(toolMenu["Oscilloscope"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnSignalGenerator, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Signal Generator"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnDMM, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Voltmeter"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnPowerControl, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Power Supply"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnLogicAnalyzer, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Logic Analyzer"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnPatternGenerator, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Pattern Generator"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnNetworkAnalyzer, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Network Analyzer"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnDigitalIO, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Digital IO"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
-	connect(ui->btnSpectrumAnalyzer, SIGNAL(toggled(bool)), this,
+	connect(toolMenu["Spectrum Analyzer"]->getToolBtn(), SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
 	connect(ui->btnHome, SIGNAL(toggled(bool)), this,
 		SLOT(setButtonBackground(bool)));
+
 	ui->btnHome->toggle();
 
+	//setAcceptDrops(true);
 
+	qDebug()<<toolMenu["Spectrum Analyzer"]->getToolBtn()->isEnabled();
+	//qDebug()<<toolMenu["Spectrum Analyzer"]->ui;
+	//toolMenu["Spectrum Analyzer"]->setEnabled(true);
+	qDebug()<<toolMenu["Spectrum Analyzer"]->getToolBtn()->isEnabled();
 
 	loadToolTips(false);
 
@@ -134,6 +167,8 @@ ToolLauncher::ToolLauncher(QWidget *parent) :
 	settings = new QSettings(tempFile.fileName(), QSettings::IniFormat);
 
 	tl_api->ApiObject::load(*settings);
+
+
 }
 
 void ToolLauncher::saveSettings()
@@ -164,6 +199,7 @@ void ToolLauncher::runProgram(const QString& program, const QString& fn)
 	/* Exit application */
 	qApp->exit(ret);
 }
+
 
 void ToolLauncher::search()
 {
@@ -245,30 +281,86 @@ void ToolLauncher::updateListOfDevices(const QVector<QString>& uris)
 	search_timer->start(TIMER_TIMEOUT_MS);
 }
 
+void ToolLauncher::generateMenu()
+{
+	tools << "Digital IO" << "Voltmeter"
+		<< "Oscilloscope" << "Power Supply"
+		<< "Signal Generator" << "Pattern Generator"
+		<< "Logic Analyzer" << "Network Analyzer"
+		<< "Spectrum Analyzer";
+
+	toolIcons << ":/menu/io.png"
+		<< ":/menu/voltmeter.png"
+		<< ":/menu/oscilloscope.png"
+		<< ":/menu/power_supply.png"
+		<< ":/menu/signal_generator.png"
+		<< ":/menu/pattern_generator.png"
+		<< ":/menu/logic_analyzer.png"
+		<< ":/menu/network_analyzer.png"
+		<< ":/menu/spectrum_analyzer.png";
+	for (int i = 0; i < tools.size(); ++i){
+		if (tools[i] == "Oscilloscope" ||
+			tools[i] == "Voltmeter" ||
+			tools[i] == "Spectrum Analyzer" ||
+			tools[i] == "Siganl Generator") {
+			toolMenu.insert(tools[i],
+					new MenuOption(tools[i],
+						toolIcons[i], i, true, ui->menu));
+		} else {
+		toolMenu.insert(tools[i],
+				new MenuOption(tools[i],
+						toolIcons[i], i, false, ui->menu));
+		}
+		connect(toolMenu[tools[i]], SIGNAL(requestPositionChange(int, int, bool)), this,
+				SLOT(swapMenuOptions(int, int, bool)));
+		ui->menuOptionsLayout->insertWidget(i, toolMenu[tools[i]]);
+		ui->buttonGroup_2->addButton(toolMenu[tools[i]]->getToolBtn());
+	}
+
+}
+
 void ToolLauncher::loadToolTips(bool connected){
 	if (connected){
 		ui->btnHome->setToolTip(QString("Click to open the home menu"));
-		ui->btnDigitalIO->setToolTip(QString("Click to open the Digital IO tool"));
-		ui->btnLogicAnalyzer->setToolTip(QString("Click to open the Logical Analyzer tool"));
-		ui->btnNetworkAnalyzer->setToolTip(QString("Click to open the Network Analyzer tool"));
-		ui->btnOscilloscope->setToolTip(QString("Click to open the Oscilloscope tool"));
-		ui->btnPatternGenerator->setToolTip(QString("Click to open the Pattern Generator tool"));
-		ui->btnPowerControl->setToolTip(QString("Click to open the Power Supply tool"));
-		ui->btnSignalGenerator->setToolTip(QString("Click to open the Signal Generator tool"));
-		ui->btnSpectrumAnalyzer->setToolTip(QString("Click to open the Spectrum Analyzer tool"));
-		ui->btnDMM->setToolTip(QString("Click to open the Voltmeter tool"));
+		toolMenu["Digital IO"]->getToolBtn()->setToolTip(
+					QString("Click to open the Digital IO tool"));
+		toolMenu["Logic Analyzer"]->getToolBtn()->setToolTip(
+					QString("Click to open the Logical Analyzer tool"));
+		toolMenu["Network Analyzer"]->getToolBtn()->setToolTip(
+					QString("Click to open the Network Analyzer tool"));
+		toolMenu["Oscilloscope"]->getToolBtn()->setToolTip(
+					QString("Click to open the Oscilloscope tool"));
+		toolMenu["Pattern Generator"]->getToolBtn()->setToolTip(
+					QString("Click to open the Pattern Generator tool"));
+		toolMenu["Power Supply"]->getToolBtn()->setToolTip(
+					QString("Click to open the Power Supply tool"));
+		toolMenu["Signal Generator"]->getToolBtn()->setToolTip(
+					QString("Click to open the Signal Generator tool"));
+		toolMenu["Spectrum Analyzer"]->getToolBtn()->setToolTip(
+					QString("Click to open the Spectrum Analyzer tool"));
+		toolMenu["Voltmeter"]->getToolBtn()->setToolTip(
+					QString("Click to open the Voltmeter tool"));
 		ui->btnConnect->setToolTip(QString("Click to disconnect the device"));
 	} else {
 		ui->btnHome->setToolTip(QString());
-		ui->btnDigitalIO->setToolTip(QString());
-		ui->btnLogicAnalyzer->setToolTip(QString());
-		ui->btnNetworkAnalyzer->setToolTip(QString());
-		ui->btnOscilloscope->setToolTip(QString());
-		ui->btnPatternGenerator->setToolTip(QString());
-		ui->btnPowerControl->setToolTip(QString());
-		ui->btnSignalGenerator->setToolTip(QString());
-		ui->btnSpectrumAnalyzer->setToolTip(QString());
-		ui->btnDMM->setToolTip(QString());
+		toolMenu["Digital IO"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Logic Analyzer"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Network Analyzer"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Oscilloscope"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Pattern Generator"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Power Supply"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Signal Generator"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Spectrum Analyzer"]->getToolBtn()->setToolTip(
+					QString());
+		toolMenu["Voltmeter"]->getToolBtn()->setToolTip(
+					QString());
 		ui->btnConnect->setToolTip(QString("Select a device first"));
 	}
 }
@@ -358,52 +450,53 @@ void ToolLauncher::swapMenu(QWidget *menu)
 
 void ToolLauncher::setButtonBackground(bool on)
 {
+
 	auto *btn = static_cast<QPushButton *>(QObject::sender());
 
 	setDynamicProperty(btn->parentWidget(), "selected", on);
 }
 
-void ToolLauncher::on_btnOscilloscope_clicked()
+void ToolLauncher::btnOscilloscope_clicked()
 {
 	swapMenu(static_cast<QWidget *>(oscilloscope));
 }
 
-void ToolLauncher::on_btnSignalGenerator_clicked()
+void ToolLauncher::btnSignalGenerator_clicked()
 {
 	swapMenu(static_cast<QWidget *>(signal_generator));
 }
 
-void ToolLauncher::on_btnDMM_clicked()
+void ToolLauncher::btnDMM_clicked()
 {
 	swapMenu(static_cast<QWidget *>(dmm));
 }
 
-void ToolLauncher::on_btnPowerControl_clicked()
+void ToolLauncher::btnPowerControl_clicked()
 {
 	swapMenu(static_cast<QWidget *>(power_control));
 }
 
-void ToolLauncher::on_btnLogicAnalyzer_clicked()
+void ToolLauncher::btnLogicAnalyzer_clicked()
 {
 	swapMenu(static_cast<QWidget *>(logic_analyzer));
 }
 
-void adiscope::ToolLauncher::on_btnPatternGenerator_clicked()
+void adiscope::ToolLauncher::btnPatternGenerator_clicked()
 {
 	swapMenu(static_cast<QWidget *>(pattern_generator));
 }
 
-void adiscope::ToolLauncher::on_btnNetworkAnalyzer_clicked()
+void adiscope::ToolLauncher::btnNetworkAnalyzer_clicked()
 {
 	swapMenu(static_cast<QWidget *>(network_analyzer));
 }
 
-void adiscope::ToolLauncher::on_btnSpectrumAnalyzer_clicked()
+void adiscope::ToolLauncher::btnSpectrumAnalyzer_clicked()
 {
 	swapMenu(static_cast<QWidget *>(spectrum_analyzer));
 }
 
-void adiscope::ToolLauncher::on_btnDigitalIO_clicked()
+void adiscope::ToolLauncher::btnDigitalIO_clicked()
 {
 	swapMenu(static_cast<QWidget *>(dio));
 }
@@ -456,15 +549,15 @@ void adiscope::ToolLauncher::disconnect()
 
 	if (ctx) {
 		alive_timer->stop();
-		ui->stopDIO->setChecked(false);
-		ui->stopDMM->setChecked(false);
-		ui->stopLogicAnalyzer->setChecked(false);
-		ui->stopNetworkAnalyzer->setChecked(false);
-		ui->stopOscilloscope->setChecked(false);
-		ui->stopPatternGenerator->setChecked(false);
-		ui->stopPowerControl->setChecked(false);
-		ui->stopSignalGenerator->setChecked(false);
-		ui->stopSpectrumAnalyzer->setChecked(false);
+		toolMenu["Digital IO"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Logic Analyzer"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Network Analyzer"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Oscilloscope"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Pattern Generator"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Power Supply"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Signal Generator"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Spectrum Analyzer"]->getToolStopBtn()->setChecked(false);
+		toolMenu["Voltmeter"]->getToolStopBtn()->setChecked(false);
 
 		destroyContext();
 		loadToolTips(false);
@@ -610,15 +703,15 @@ bool ToolLauncher::loadDecoders(QString path)
 
 void adiscope::ToolLauncher::calibrate()
 {
-	auto old_dmm_text = ui->btnDMM->text();
-	auto old_osc_text = ui->btnOscilloscope->text();
-	auto old_siggen_text = ui->btnSignalGenerator->text();
-	auto old_spectrum_text = ui->btnSpectrumAnalyzer->text();
+	auto old_dmm_text = toolMenu["Voltmeter"]->getToolBtn()->text();
+	auto old_osc_text = toolMenu["Oscilloscope"]->getToolBtn()->text();
+	auto old_siggen_text = toolMenu["Signal Generator"]->getToolBtn()->text();
+	auto old_spectrum_text = toolMenu["Spectrum Analyzer"]->getToolBtn()->text();
 
-	ui->btnDMM->setText("Calibrating...");
-	ui->btnOscilloscope->setText("Calibrating...");
-	ui->btnSignalGenerator->setText("Calibrating...");
-	ui->btnSpectrumAnalyzer->setText("Calibrating...");
+	toolMenu["Voltmeter"]->getToolBtn()->setText("Calibrating...");
+	toolMenu["Oscilloscope"]->getToolBtn()->setText("Calibrating...");
+	toolMenu["Signal Generator"]->getToolBtn()->setText("Calibrating...");
+	toolMenu["Spectrum Analyzer"]->getToolBtn()->setText("Calibrating...");
 
 	Calibration calib(ctx);
 
@@ -634,10 +727,10 @@ void adiscope::ToolLauncher::calibrate()
 		m2k_adc->setChnCorrectionGain(1, calib.adcGainChannel1());
 	}
 
-	ui->btnDMM->setText(old_dmm_text);
-	ui->btnOscilloscope->setText(old_osc_text);
-	ui->btnSignalGenerator->setText(old_siggen_text);
-	ui->btnSpectrumAnalyzer->setText(old_spectrum_text);
+	toolMenu["Voltmeter"]->getToolBtn()->setText(old_dmm_text);
+	toolMenu["Oscilloscope"]->getToolBtn()->setText(old_osc_text);
+	toolMenu["Signal Generator"]->getToolBtn()->setText(old_siggen_text);
+	toolMenu["Spectrum Analyzer"]->getToolBtn()->setText(old_spectrum_text);
 
 	Q_EMIT adcCalibrationDone();
 	Q_EMIT dacCalibrationDone(calib.dacAvlsb(), calib.dacBvlsb());
@@ -647,20 +740,21 @@ void adiscope::ToolLauncher::enableAdcBasedTools()
 {
 	if (filter->compatible(TOOL_OSCILLOSCOPE)) {
 		oscilloscope = new Oscilloscope(ctx, filter, adc,
-						ui->stopOscilloscope,
+						toolMenu["Oscilloscope"]->getToolStopBtn(),
 						&js_engine, this);
-		adc_users_group.addButton(ui->stopOscilloscope);
+		adc_users_group.addButton(toolMenu["Oscilloscope"]->getToolStopBtn());
 	}
 
 	if (filter->compatible(TOOL_DMM)) {
-		dmm = new DMM(ctx, filter, adc, ui->stopDMM, &js_engine, this);
-		adc_users_group.addButton(ui->stopDMM);
+		dmm = new DMM(ctx, filter, adc, toolMenu["Voltmeter"]->getToolStopBtn(),
+				&js_engine, this);
+		adc_users_group.addButton(toolMenu["Voltmeter"]->getToolStopBtn());
 	}
 
 	if (filter->compatible(TOOL_SPECTRUM_ANALYZER)) {
 		spectrum_analyzer = new SpectrumAnalyzer(ctx, filter, adc,
-			ui->stopSpectrumAnalyzer, this);
-		adc_users_group.addButton(ui->stopSpectrumAnalyzer);
+			toolMenu["Spectrum Analyzer"]->getToolStopBtn(), this);
+		adc_users_group.addButton(toolMenu["Spectrum Analyzer"]->getToolStopBtn());
 	}
 
 	Q_EMIT adcToolsCreated();
@@ -671,7 +765,7 @@ void adiscope::ToolLauncher::enableDacBasedTools(float dacA_vlsb,
 {
 	if (filter->compatible(TOOL_SIGNAL_GENERATOR)) {
 		signal_generator = new SignalGenerator(ctx, filter,
-							ui->stopSignalGenerator, &js_engine, this);
+							toolMenu["Signal Generator"]->getToolStopBtn(), &js_engine, this);
 
 		struct iio_device *dev = iio_context_find_device(ctx, "m2k-dac-a");
 
@@ -748,30 +842,31 @@ bool adiscope::ToolLauncher::switchContext(const QString& uri)
 	}
 
 	if (filter->compatible(TOOL_DIGITALIO)) {
-		dio = new DigitalIO(ctx, filter, ui->stopDIO, dioManager, &js_engine, this);
+		dio = new DigitalIO(ctx, filter, toolMenu["Digital IO"]->getToolStopBtn(),
+				dioManager, &js_engine, this);
 	}
 
 
 	if (filter->compatible(TOOL_POWER_CONTROLLER)) {
-		power_control = new PowerController(ctx,
-		                                    ui->stopPowerControl, &js_engine, this);
+		power_control = new PowerController(ctx, toolMenu["Power Supply"]->getToolStopBtn(),
+				&js_engine, this);
 	}
 
 	if (filter->compatible(TOOL_LOGIC_ANALYZER)) {
-		logic_analyzer = new LogicAnalyzer(ctx, filter,
-		                                   ui->stopLogicAnalyzer, &js_engine, this);
+		logic_analyzer = new LogicAnalyzer(ctx, filter, toolMenu["Logic Analyzer"]->getToolStopBtn(),
+				&js_engine, this);
 	}
 
 
 	if (filter->compatible((TOOL_PATTERN_GENERATOR))) {
 		pattern_generator = new PatternGenerator(ctx, filter,
-		                ui->stopPatternGenerator, &js_engine,dioManager, this);
+				toolMenu["Pattern Generator"]->getToolStopBtn(), &js_engine,dioManager, this);
 	}
 
 
 	if (filter->compatible((TOOL_NETWORK_ANALYZER))) {
 		network_analyzer = new NetworkAnalyzer(ctx, filter,
-		                                       ui->stopNetworkAnalyzer, &js_engine, this);
+						       toolMenu["Network Analyzer"]->getToolStopBtn(), &js_engine, this);
 	}
 
 	loadToolTips(true);
@@ -842,6 +937,64 @@ void ToolLauncher::toolDetached(bool detached)
 
 	tool->setVisible(detached);
 	tool->runButton()->parentWidget()->setEnabled(!detached);
+}
+
+void ToolLauncher::swapMenuOptions(int source, int destination, bool dropAfter)
+{
+	QWidget *sourceWidget = ui->menuOptionsLayout->itemAt(source)->widget();
+	if (dropAfter == true){
+		for (int i = source + 1; i < destination + 1; i++ ){
+			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
+			UpdatePosition(dest, i - 1);
+		}
+		UpdatePosition(sourceWidget, destination);
+		ui->menuOptionsLayout->removeWidget(sourceWidget);
+		ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
+		return;
+	}
+	if (destination == MAX_MENU_OPTIONS - 1 && source != MAX_MENU_OPTIONS - 2){
+		for (int i = source + 1; i < MAX_MENU_OPTIONS; i++ ){
+			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
+			UpdatePosition(dest, i - 1);
+		}
+		UpdatePosition(sourceWidget, destination);
+		ui->menuOptionsLayout->removeWidget(sourceWidget);
+		ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
+		return;
+	}
+	if (destination == 0){
+		for (int i = 0; i < source; i++ ){
+			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
+			UpdatePosition(dest, i + 1);
+		}
+		UpdatePosition(sourceWidget, destination);
+		ui->menuOptionsLayout->removeWidget(sourceWidget);
+		ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
+		return;
+	}
+	if (source < destination){
+		for (int i = source + 1; i < destination; i++ ){
+			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
+			UpdatePosition(dest, i - 1);
+		}
+		UpdatePosition(sourceWidget, destination - 1);
+		ui->menuOptionsLayout->removeWidget(sourceWidget);
+		ui->menuOptionsLayout->insertWidget(destination - 1, sourceWidget);
+		return;
+	} else {
+		for (int i = destination; i < source; i++ ){
+			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
+			UpdatePosition(dest, i + 1);
+		}
+	}
+	UpdatePosition(sourceWidget, destination);
+	ui->menuOptionsLayout->removeWidget(sourceWidget);
+	ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
+}
+
+void ToolLauncher::UpdatePosition(QWidget *widget, int position){
+	MenuOption *menuOption = static_cast<MenuOption *>(widget);
+	menuOption->setPosition(position);
 }
 
 bool ToolLauncher_API::menu_opened() const
