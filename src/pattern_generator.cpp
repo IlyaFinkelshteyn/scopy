@@ -630,6 +630,8 @@ void PatternGenerator::changeName(QString name)
 
 	if (ch==nullptr) {
 		chg->set_label(name.toStdString());
+		if(!chg->is_grouped())
+			chg->get_channel(0)->set_label(name.toStdString());
 		chgui->ui->ChannelGroupLabel->setText(name);
 	} else {
 		ch->set_label(name.toStdString());
@@ -1010,6 +1012,7 @@ void PatternGenerator::jsonToChm(QJsonObject obj)
 
 void PatternGenerator::resetPGToDefault()
 {
+	chm.clearChannels();
 	chm.clearChannelGroups();
 
 	for (int i=0; i<16; i++) {
@@ -1110,7 +1113,6 @@ int PatternGenerator_API::channel_size()
 void PatternGenerator_API::set_channel_size(int val)
 {
 	PatternGeneratorChannelManager *chm = pg->chmui->chm;
-
 	chm->clearChannels();
 }
 
