@@ -199,7 +199,6 @@ void MenuOption::dragLeaveEvent(QDragLeaveEvent *event)
 void MenuOption::dropEvent(QDropEvent *event)
 {
 	disableSeparatorsHighlight();
-	setDynamicProperty(this, "allowHover", true);
 	short from, to;
 	if (event->source() == this && event->possibleActions() & Qt::MoveAction){
 		return;
@@ -211,6 +210,18 @@ void MenuOption::dropEvent(QDropEvent *event)
 	}
 
 	Q_EMIT requestPositionChange(from, to, dropAfter);
+}
+
+void MenuOption::enterEvent(QEvent *event)
+{
+	setDynamicProperty(this, "allowHover", true);
+	event->accept();
+}
+
+void MenuOption::leaveEvent(QEvent *event)
+{
+	setDynamicProperty(this, "allowHover", false);
+	event->accept();
 }
 
 void MenuOption::paintEvent(QPaintEvent *pe)

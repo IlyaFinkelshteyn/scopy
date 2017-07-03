@@ -26,7 +26,6 @@
 #include "tool_launcher.hpp"
 #include "qtjs.hpp"
 #include "menuoption.h"
-#include "menuoptioncustom.h"
 
 #include "ui_device.h"
 #include "ui_tool_launcher.h"
