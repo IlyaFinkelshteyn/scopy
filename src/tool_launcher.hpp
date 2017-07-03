@@ -113,6 +113,7 @@ private Q_SLOTS:
 	void toolDetached(bool detached);
 
 	void swapMenuOptions(int source, int destination, bool dropAfter);
+	void highlight(bool on, int position);
 
 private:
 	Ui::ToolLauncher *ui;

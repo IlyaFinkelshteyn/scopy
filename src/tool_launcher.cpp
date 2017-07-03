@@ -312,6 +312,8 @@ void ToolLauncher::generateMenu()
 		}
 		connect(toolMenu[tools[i]], SIGNAL(requestPositionChange(int, int, bool)), this,
 				SLOT(swapMenuOptions(int, int, bool)));
+		connect(toolMenu[tools[i]], SIGNAL(highlight(bool, int)), this,
+				SLOT(highlight(bool, int)));
 		ui->menuOptionsLayout->insertWidget(i, toolMenu[tools[i]]);
 		ui->buttonGroup_2->addButton(toolMenu[tools[i]]->getToolBtn());
 	}
@@ -989,6 +991,19 @@ void ToolLauncher::swapMenuOptions(int source, int destination, bool dropAfter)
 	UpdatePosition(sourceWidget, destination);
 	ui->menuOptionsLayout->removeWidget(sourceWidget);
 	ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
+}
+
+void ToolLauncher::highlight(bool on, int position)
+{
+	for (const auto x: toolMenu)
+		if (x->getPosition() == position && !x->isVisible())
+			position++;
+
+	for (const auto x : toolMenu)
+		if (x->getPosition() == position){
+			x->highlightNeighbour(on);
+			return;
+		}
 }
 
 void ToolLauncher::UpdatePosition(QWidget *widget, int position){

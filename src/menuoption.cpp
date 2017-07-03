@@ -114,6 +114,19 @@ void MenuOption::setPosition(int position)
 	}
 }
 
+int MenuOption::getPosition()
+{
+	return position;
+}
+
+void MenuOption::highlightNeighbour(bool on)
+{
+	if (on)
+		highlightTopSeparator();
+	else
+		disableSeparatorsHighlight();
+}
+
 void MenuOption::mousePressEvent(QMouseEvent *event)
 {
 	if (event->button() == Qt::LeftButton){
@@ -123,7 +136,6 @@ void MenuOption::mousePressEvent(QMouseEvent *event)
 
 void MenuOption::mouseMoveEvent(QMouseEvent *event)
 {
-	disableSeparatorsHighlight();
 	if (!(event->buttons() & Qt::LeftButton)){
 		return;
 	}
@@ -155,11 +167,10 @@ void MenuOption::mouseMoveEvent(QMouseEvent *event)
 
 void MenuOption::dragEnterEvent(QDragEnterEvent *event)
 {
-	disableSeparatorsHighlight();
 	auto w = this->geometry().width();
 	auto h = this->geometry().height();
 	topDragbox.setRect(0, 0, w, h/2);
-	botDragbox.setRect(0,h/2,w, h/2);
+	botDragbox.setRect(0, h/2, w, h/2);
 
 	if (event->mimeData()->hasFormat("menu/option")){
 		short from = (short)event->mimeData()->data("menu/option")[1];
@@ -178,10 +189,14 @@ void MenuOption::dragMoveEvent(QDragMoveEvent *event)
 		disableSeparatorsHighlight();
 		highlightTopSeparator();
 		event->accept();
-	} else if(event->answerRect().intersects(botDragbox) &&
+	} else if (event->answerRect().intersects(botDragbox) &&
 				this->position == 8){
 			disableSeparatorsHighlight();
 			highlightBotSeparator();
+			event->accept();
+	} else if (event->answerRect().intersects(botDragbox)){
+			disableSeparatorsHighlight();
+			Q_EMIT highlight(true, position + 1);
 			event->accept();
 	} else {
 		disableSeparatorsHighlight();
@@ -203,13 +218,14 @@ void MenuOption::dropEvent(QDropEvent *event)
 	if (event->source() == this && event->possibleActions() & Qt::MoveAction){
 		return;
 	}
-	bool dropAfter = botDragbox.contains(event->pos());
+	bool dropAfter = (botDragbox.contains(event->pos()) && position == 8);
+	bool dropAfterOnly = botDragbox.contains(event->pos());
 	if (event->mimeData()->hasFormat("menu/option")){
 		from = (short)event->mimeData()->data("menu/option")[1];
 		to = (short)position;
+		if (!dropAfter && dropAfterOnly) to++;
+		Q_EMIT requestPositionChange(from, to, dropAfter);
 	}
-
-	Q_EMIT requestPositionChange(from, to, dropAfter);
 }
 
 void MenuOption::enterEvent(QEvent *event)
@@ -237,6 +253,7 @@ void MenuOption::disableSeparatorsHighlight(){
 	topSep->setVisible(false);
 	if (botSep != nullptr)
 		botSep->setVisible(false);
+	Q_EMIT highlight(false, position + 1);
 }
 
 void MenuOption::highlightTopSeparator(){

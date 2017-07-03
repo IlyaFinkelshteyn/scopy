@@ -26,7 +26,12 @@ public:
 
 	QPushButton* getToolBtn();
 	QPushButton* getToolStopBtn();
+
 	void setPosition(int position);
+	int getPosition();
+
+	void highlightNeighbour(bool on);
+
 	void paintEvent(QPaintEvent *pe);
 private:
 
@@ -51,6 +56,8 @@ private:
 
 Q_SIGNALS:
 	void requestPositionChange(int, int, bool);
+	void highlight(bool, int);
+
 private Q_SLOTS:
 	void mousePressEvent(QMouseEvent *event) override;
 	void mouseMoveEvent(QMouseEvent *event) override;
