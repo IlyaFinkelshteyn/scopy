@@ -952,13 +952,13 @@ void ToolLauncher::swapMenuOptions(int source, int destination, bool dropAfter)
 		return;
 	}
 	if (destination == MAX_MENU_OPTIONS - 1 && source != MAX_MENU_OPTIONS - 2){
-		for (int i = source + 1; i < MAX_MENU_OPTIONS; i++ ){
+		for (int i = source + 1; i < MAX_MENU_OPTIONS - 1; i++ ){
 			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
 			UpdatePosition(dest, i - 1);
 		}
-		UpdatePosition(sourceWidget, destination);
+		UpdatePosition(sourceWidget, destination - 1);
 		ui->menuOptionsLayout->removeWidget(sourceWidget);
-		ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
+		ui->menuOptionsLayout->insertWidget(destination - 1, sourceWidget);
 		return;
 	}
 	if (destination == 0){
