@@ -42,7 +42,6 @@
 
 #define TIMER_TIMEOUT_MS 5000
 #define ALIVE_TIMER_TIMEOUT_MS 5000
-#define MAX_MENU_OPTIONS 9
 
 using namespace adiscope;
 
@@ -942,6 +941,8 @@ void ToolLauncher::toolDetached(bool detached)
 
 void ToolLauncher::swapMenuOptions(int source, int destination, bool dropAfter)
 {
+	int menuSize = ui->menuOptionsLayout->count();
+
 	QWidget *sourceWidget = ui->menuOptionsLayout->itemAt(source)->widget();
 	if (dropAfter == true){
 		for (int i = source + 1; i < destination + 1; i++ ){
@@ -953,8 +954,8 @@ void ToolLauncher::swapMenuOptions(int source, int destination, bool dropAfter)
 		ui->menuOptionsLayout->insertWidget(destination, sourceWidget);
 		return;
 	}
-	if (destination == MAX_MENU_OPTIONS - 1 && source != MAX_MENU_OPTIONS - 2){
-		for (int i = source + 1; i < MAX_MENU_OPTIONS - 1; i++ ){
+	if (destination == menuSize - 1 && source != menuSize - 2){
+		for (int i = source + 1; i < menuSize - 1; i++ ){
 			QWidget *dest = ui->menuOptionsLayout->itemAt(i)->widget();
 			UpdatePosition(dest, i - 1);
 		}
